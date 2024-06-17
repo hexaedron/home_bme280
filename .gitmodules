@@ -1,0 +1,12 @@
+[submodule "src/funny_libs"]
+	path = src/funny_libs
+	url = https://github.com/hexaedron/funny_libs
+[submodule "src/ch32v003fun"]
+	path = src/ch32v003fun
+	url = https://github.com/cnlohr/ch32v003fun
+[submodule "ch32v003fun"]
+	path = ch32v003fun
+	url = https://github.com/cnlohr/ch32v003fun
+[submodule "funny_libs"]
+	path = funny_libs
+	url = https://github.com/hexaedron/funny_libs
