@@ -1,5 +1,5 @@
 #include "ch32v003fun.h"
-#include "cube_defs.h"
+#include "funny_defs.h"
 
 #include "i2c_dma.h"
 #include "BMP280.h"
@@ -58,17 +58,17 @@ int main()
 		itoa(temperature, buf, 10);
 		if ((temperature > 0) && (temperature >= 1000))
 		{
-			screen.digit(buf[0] - 48, 0);
-			screen.digit(buf[1] - 48, 1, true);
-			screen.digit(buf[2] - 48, 2);
+			screen.digit(ASCII_TO_INT(buf[0]), 0);
+			screen.digit(ASCII_TO_INT(buf[1]), 1, true);
+			screen.digit(ASCII_TO_INT(buf[2]), 2);
 			screen.digit(10, 3);
 		}
 		else if((temperature > 0) && (temperature < 1000))
 		{
 
 			screen.digit(12, 0);
-			screen.digit(buf[0] - 48, 1, true);
-			screen.digit(buf[1] - 48, 2);
+			screen.digit(ASCII_TO_INT(buf[0]), 1, true);
+			screen.digit(ASCII_TO_INT(buf[1]), 2);
 			screen.digit(10, 3);
 		}
 		screen.refresh();
@@ -77,26 +77,26 @@ int main()
 		itoa(humidity, buf, 10);
 		if(humidity >= 10000)
 		{
-			screen.digit(buf[0] - 48, 0);
-			screen.digit(buf[1] - 48, 1, true);
-			screen.digit(buf[2] - 48, 2);
+			screen.digit(ASCII_TO_INT(buf[0]), 0);
+			screen.digit(ASCII_TO_INT(buf[1]), 1, true);
+			screen.digit(ASCII_TO_INT(buf[2]), 2);
 		}
 		else
 		{
 			screen.digit(12, 0);
-			screen.digit(buf[0] - 48, 1, true);
-			screen.digit(buf[1] - 48, 2);
+			screen.digit(ASCII_TO_INT(buf[0]), 1, true);
+			screen.digit(ASCII_TO_INT(buf[1]), 2);
 		}
 		screen.digit(11, 3);
 		screen.refresh();
 		Delay_Ms(1000);
 
 		itoa(pressure / 256, buf, 10);
-		screen.digit(buf[0] - 48, 0);
-		screen.digit(buf[1] - 48, 1);
-		screen.digit(buf[2] - 48, 2, true);
+		screen.digit(ASCII_TO_INT(buf[0]), 0);
+		screen.digit(ASCII_TO_INT(buf[1]), 1);
+		screen.digit(ASCII_TO_INT(buf[2]), 2, true);
 		itoa(pressure % 256, buf, 10);
-		screen.digit(buf[0] - 48, 3);
+		screen.digit(ASCII_TO_INT(buf[0]), 3);
 		screen.refresh();
 		Delay_Ms(1000);
 	}

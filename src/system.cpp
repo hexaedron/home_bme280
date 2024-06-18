@@ -1,7 +1,7 @@
 #include <ch32v003fun.h>
 #include <stdbool.h>
 
-#include "cube_defs.h"
+#include "funny_defs.h"
 
 //Globals
 static volatile uint64_t     _millis       = 0ULL;    // Millisecons counter
