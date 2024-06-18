@@ -51,11 +51,13 @@ int main()
 	displayMode_t displayMode = displayMode_t::printTemperature;
 
 	simpleTimer myTimer(SCREEN_CHANGE_INTERVAL);
+	bool firstTime = true;
 
 	while (true)
 	{
-		if(myTimer.ready())
+		if(myTimer.ready() || firstTime)
 		{
+			firstTime = false;
 			sensor.force_measurement();
 			while (sensor.is_measuring())
 			{
