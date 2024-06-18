@@ -4,10 +4,21 @@
 #include "i2c_dma.h"
 #include "BMP280.h"
 #include "vk16k33.h"
+#include "simpleTimer.h"
 
 #include <stdbool.h>
 #include <cstdlib>
 #include <cstring>
+
+enum displayMode_t
+{
+	printTemperature,
+	printHumidity,
+	printPressure,
+	idle
+};
+
+#define SCREEN_CHANGE_INTERVAL 2000UL
 
 // from system.cpp
 void system_initSystick();
@@ -37,67 +48,86 @@ int main()
 	vk16k33 screen;
 	screen.init();
 
+	displayMode_t displayMode = printTemperature;
+
+	simpleTimer myTimer(SCREEN_CHANGE_INTERVAL);
+
 	while (true)
 	{
-		sensor.force_measurement();
-		while (sensor.is_measuring())
+		if(myTimer.ready())
 		{
-		};
-		sensor.read_fixed();
+			sensor.force_measurement();
+			while (sensor.is_measuring())
+			{
+			};
+			sensor.read_fixed();
 
-		temperature = sensor.getTemp();
-		humidity = sensor.getHumidity();
-		pressure = sensor.getPressureMmHg();
+			temperature = sensor.getTemp();
+			humidity = sensor.getHumidity();
+			pressure = sensor.getPressureMmHg();
 
-		sensor.sleep();
+			sensor.sleep();
 
-		screen.clear();
+			screen.clear();
 
-		char buf[10];
+			char buf[10];
 
-		itoa(temperature, buf, 10);
-		if ((temperature > 0) && (temperature >= 1000))
-		{
-			screen.digit(ASCII_TO_INT(buf[0]), 0);
-			screen.digit(ASCII_TO_INT(buf[1]), 1, true);
-			screen.digit(ASCII_TO_INT(buf[2]), 2);
-			screen.digit(10, 3);
+			switch (displayMode)
+			{
+				case displayMode_t::printTemperature :
+					itoa(temperature, buf, 10);
+					if ((temperature > 0) && (temperature >= 1000))
+					{
+						screen.digit(ASCII_TO_INT(buf[0]), 0);
+						screen.digit(ASCII_TO_INT(buf[1]), 1, true);
+						screen.digit(ASCII_TO_INT(buf[2]), 2);
+						screen.digit(10, 3);
+					}
+					else if((temperature > 0) && (temperature < 1000))
+					{
+
+						screen.digit(12, 0);
+						screen.digit(ASCII_TO_INT(buf[0]), 1, true);
+						screen.digit(ASCII_TO_INT(buf[1]), 2);
+						screen.digit(10, 3);
+					}
+					screen.refresh();
+					displayMode = displayMode_t::printHumidity;
+				break;
+
+				case displayMode_t::printHumidity :
+					itoa(humidity, buf, 10);
+					if(humidity >= 10000)
+					{
+						screen.digit(ASCII_TO_INT(buf[0]), 0);
+						screen.digit(ASCII_TO_INT(buf[1]), 1, true);
+						screen.digit(ASCII_TO_INT(buf[2]), 2);
+					}
+					else
+					{
+						screen.digit(12, 0);
+						screen.digit(ASCII_TO_INT(buf[0]), 1, true);
+						screen.digit(ASCII_TO_INT(buf[1]), 2);
+					}
+					screen.digit(11, 3);
+					screen.refresh();
+					displayMode = displayMode_t::printPressure;
+				break;
+
+				case  displayMode_t::printPressure :
+					itoa(pressure / 256, buf, 10);
+					screen.digit(ASCII_TO_INT(buf[0]), 0);
+					screen.digit(ASCII_TO_INT(buf[1]), 1);
+					screen.digit(ASCII_TO_INT(buf[2]), 2, true);
+					itoa(pressure % 256, buf, 10);
+					screen.digit(ASCII_TO_INT(buf[0]), 3);
+					screen.refresh();
+					displayMode = displayMode_t::printTemperature;
+				break;
+			
+			default:
+				break;
+			}
 		}
-		else if((temperature > 0) && (temperature < 1000))
-		{
-
-			screen.digit(12, 0);
-			screen.digit(ASCII_TO_INT(buf[0]), 1, true);
-			screen.digit(ASCII_TO_INT(buf[1]), 2);
-			screen.digit(10, 3);
-		}
-		screen.refresh();
-		Delay_Ms(1000);
-		
-		itoa(humidity, buf, 10);
-		if(humidity >= 10000)
-		{
-			screen.digit(ASCII_TO_INT(buf[0]), 0);
-			screen.digit(ASCII_TO_INT(buf[1]), 1, true);
-			screen.digit(ASCII_TO_INT(buf[2]), 2);
-		}
-		else
-		{
-			screen.digit(12, 0);
-			screen.digit(ASCII_TO_INT(buf[0]), 1, true);
-			screen.digit(ASCII_TO_INT(buf[1]), 2);
-		}
-		screen.digit(11, 3);
-		screen.refresh();
-		Delay_Ms(1000);
-
-		itoa(pressure / 256, buf, 10);
-		screen.digit(ASCII_TO_INT(buf[0]), 0);
-		screen.digit(ASCII_TO_INT(buf[1]), 1);
-		screen.digit(ASCII_TO_INT(buf[2]), 2, true);
-		itoa(pressure % 256, buf, 10);
-		screen.digit(ASCII_TO_INT(buf[0]), 3);
-		screen.refresh();
-		Delay_Ms(1000);
 	}
 }
