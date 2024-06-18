@@ -26,8 +26,8 @@ int main()
 	funPinMode(PC6, GPIO_Speed_In | GPIO_CNF_IN_FLOATING);
 
 	bmp280 sensor;
-	volatile uint32_t pressure, humidity;
-	volatile int32_t temperature;
+	uint32_t pressure, humidity;
+	int32_t temperature;
 
 	I2C_init();
 
@@ -54,8 +54,8 @@ int main()
 		screen.clear();
 
 		char buf[10];
-		itoa(temperature, buf, 10);
 
+		itoa(temperature, buf, 10);
 		if ((temperature > 0) && (temperature >= 1000))
 		{
 			screen.digit(buf[0] - 48, 0);
@@ -71,8 +71,27 @@ int main()
 			screen.digit(buf[1] - 48, 2);
 			screen.digit(10, 3);
 		}
-
 		screen.refresh();
 		Delay_Ms(1000);
+
+		screen.clear();
+		
+		itoa(humidity, buf, 10);
+		if(humidity >= 10000)
+		{
+			screen.digit(buf[0] - 48, 0);
+			screen.digit(buf[1] - 48, 1, true);
+			screen.digit(buf[2] - 48, 2);
+		}
+		else
+		{
+			screen.digit(12, 0);
+			screen.digit(buf[0] - 48, 1, true);
+			screen.digit(buf[1] - 48, 2);
+		}
+		screen.digit(11, 3);
+		screen.refresh();
+		Delay_Ms(1000);
+
 	}
 }
