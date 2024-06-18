@@ -73,8 +73,6 @@ int main()
 		}
 		screen.refresh();
 		Delay_Ms(1000);
-
-		screen.clear();
 		
 		itoa(humidity, buf, 10);
 		if(humidity >= 10000)
@@ -93,5 +91,13 @@ int main()
 		screen.refresh();
 		Delay_Ms(1000);
 
+		itoa(pressure / 256, buf, 10);
+		screen.digit(buf[0] - 48, 0);
+		screen.digit(buf[1] - 48, 1);
+		screen.digit(buf[2] - 48, 2, true);
+		itoa(pressure % 256, buf, 10);
+		screen.digit(buf[0] - 48, 3);
+		screen.refresh();
+		Delay_Ms(1000);
 	}
 }
