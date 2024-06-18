@@ -48,7 +48,7 @@ int main()
 	vk16k33 screen;
 	screen.init();
 
-	displayMode_t displayMode = printTemperature;
+	displayMode_t displayMode = displayMode_t::printTemperature;
 
 	simpleTimer myTimer(SCREEN_CHANGE_INTERVAL);
 
@@ -67,8 +67,6 @@ int main()
 			pressure = sensor.getPressureMmHg();
 
 			sensor.sleep();
-
-			screen.clear();
 
 			char buf[10];
 
