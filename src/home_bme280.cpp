@@ -19,7 +19,7 @@ enum displayMode_t
 	printPressure
 };
 
-#define SCREEN_CHANGE_INTERVAL 2000UL
+#define SCREEN_CHANGE_INTERVAL 5000UL
 #define BRIGHTNESS_SAVE_TIMEOUT 5000UL
 
 // from system.cpp
@@ -83,9 +83,13 @@ int main()
 			system_initSystick();
 		}
 		
-		if((screenChangeTimer.ready() || firstTime) || btnClick())
+		
+		bool wasClick = btnClick();
+		if((screenChangeTimer.ready() || firstTime) || wasClick)
 		{
 			firstTime = false;
+			if(wasClick) screenChangeTimer.start_int();
+			wasClick = false;
 			sensor.force_measurement();
 			while (sensor.is_measuring())
 			{
