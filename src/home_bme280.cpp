@@ -6,6 +6,7 @@
 #include "vk16k33.h"
 #include "simpleTimer.h"
 #include "tim2Encoder.h"
+#include "optiondata.h"
 
 #include <stdbool.h>
 #include <cstdlib>
@@ -19,6 +20,7 @@ enum displayMode_t
 };
 
 #define SCREEN_CHANGE_INTERVAL 2000UL
+#define BRIGHTNESS_SAVE_TIMEOUT 5000UL
 
 // from system.cpp
 void system_initSystick();
@@ -51,10 +53,12 @@ int main()
 
 	vk16k33 screen;
 	screen.init();
+	screen.setBrightness(OB->Data0);
 
 	displayMode_t displayMode = displayMode_t::printTemperature;
 
-	simpleTimer myTimer(SCREEN_CHANGE_INTERVAL);
+	simpleTimer screenChangeTimer(SCREEN_CHANGE_INTERVAL);
+	simpleTimer flashTimer(BRIGHTNESS_SAVE_TIMEOUT);
 	bool firstTime = true;
 
 	while (true)
@@ -63,11 +67,23 @@ int main()
 		
 		int delta = enc.getDelta();
 		if(delta > 0)
+		{
 			screen.incBrightness();
+			flashTimer.start_int();
+		}
 		if(delta < 0)
+		{
 			screen.decBrightness();
+			flashTimer.start_int();
+		}
 		
-		if((myTimer.ready() || firstTime) || btnClick())
+		if(flashTimer.ready() && (OB->Data0 != screen.getBrightness()) )
+		{
+			FlashOptionData(screen.getBrightness(), 0);
+			system_initSystick();
+		}
+		
+		if((screenChangeTimer.ready() || firstTime) || btnClick())
 		{
 			firstTime = false;
 			sensor.force_measurement();
