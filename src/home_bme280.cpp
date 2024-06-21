@@ -5,6 +5,7 @@
 #include "BMP280.h"
 #include "vk16k33.h"
 #include "simpleTimer.h"
+#include "tim2Encoder.h"
 
 #include <stdbool.h>
 #include <cstdlib>
@@ -40,6 +41,8 @@ int main()
 	uint32_t pressure, humidity;
 	int32_t temperature;
 
+	tim2Encoder enc(AFIO_PCFR1_TIM2_REMAP_NOREMAP);
+
 	I2C_init();
 
 	sensor.init_default_params();
@@ -55,6 +58,12 @@ int main()
 
 	while (true)
 	{
+		int delta = enc.getDelta();
+		if(delta > 0)
+			screen.incBrightness();
+		if(delta < 0)
+			screen.decBrightness();
+		
 		if(myTimer.ready() || firstTime)
 		{
 			firstTime = false;
