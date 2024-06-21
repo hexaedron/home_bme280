@@ -11,7 +11,7 @@ static volatile bool         _keyPressed   = false;   // Button pressed flag
 static volatile bool         _keyHeld      = false;   // Button held flag
 static volatile bool         _keyRaw       = false;   // Raw key read status
 
-#define BUTTON_DEBOUNCE_MS       10
+#define BUTTON_DEBOUNCE_MS      100
 #define BUTTON_TICK_MS           10
 #define BUTTON_HOLD_TIMEOUT_MS 1000 
 
