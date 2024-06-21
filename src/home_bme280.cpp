@@ -15,8 +15,7 @@ enum displayMode_t
 {
 	printTemperature,
 	printHumidity,
-	printPressure,
-	idle
+	printPressure
 };
 
 #define SCREEN_CHANGE_INTERVAL 2000UL
@@ -24,6 +23,8 @@ enum displayMode_t
 // from system.cpp
 void system_initSystick();
 void system_initEXTI(uint32_t pin, bool risingEdge = true, bool fallingEdge = false);
+void keyTick();
+bool btnClick(void);
 
 int main()
 {
@@ -58,13 +59,15 @@ int main()
 
 	while (true)
 	{
+		keyTick();
+		
 		int delta = enc.getDelta();
 		if(delta > 0)
 			screen.incBrightness();
 		if(delta < 0)
 			screen.decBrightness();
 		
-		if(myTimer.ready() || firstTime)
+		if((myTimer.ready() || firstTime) || btnClick())
 		{
 			firstTime = false;
 			sensor.force_measurement();
