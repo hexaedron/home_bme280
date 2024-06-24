@@ -19,7 +19,6 @@ enum displayMode_t
 	printPressure
 };
 
-#define SCREEN_CHANGE_INTERVAL 5000UL
 #define BRIGHTNESS_SAVE_TIMEOUT 5000UL
 
 // from system.cpp
@@ -27,6 +26,14 @@ void system_initSystick();
 void system_initEXTI(uint32_t pin, bool risingEdge = true, bool fallingEdge = false);
 void keyTick();
 bool btnClick(void);
+bool btnHeld(void);
+
+void setupMode(void);
+
+tim2Encoder enc(AFIO_PCFR1_TIM2_REMAP_NOREMAP);
+vk16k33 screen;
+uint8_t screenChangeSeconds_x15 = OB->Data1;
+bool firstTime = true;
 
 int main()
 {
@@ -44,22 +51,21 @@ int main()
 	uint32_t pressure, humidity;
 	int32_t temperature;
 
-	tim2Encoder enc(AFIO_PCFR1_TIM2_REMAP_NOREMAP);
-
 	I2C_init();
 
 	sensor.init_default_params();
 	sensor.init();
 
-	vk16k33 screen;
 	screen.init();
 	screen.setBrightness(OB->Data0);
 
 	displayMode_t displayMode = displayMode_t::printTemperature;
 
-	simpleTimer screenChangeTimer(SCREEN_CHANGE_INTERVAL);
-	simpleTimer flashTimer(BRIGHTNESS_SAVE_TIMEOUT);
-	bool firstTime = true;
+	if( (screenChangeSeconds_x15 > 240) )
+		screenChangeSeconds_x15 = 1;
+
+	simpleTimer32 screenChangeTimer((uint32_t)screenChangeSeconds_x15 * 15000UL);
+	simpleTimer32 flashTimer(BRIGHTNESS_SAVE_TIMEOUT);
 
 	while (true)
 	{
@@ -77,13 +83,18 @@ int main()
 			flashTimer.start_int();
 		}
 		
-		if(flashTimer.ready() && (OB->Data0 != screen.getBrightness()) )
+		if(flashTimer.ready() && (((uint8_t)OB->Data0 != screen.getBrightness()) || ((uint8_t)OB->Data1 != screenChangeSeconds_x15)))
 		{
-			FlashOptionData(screen.getBrightness(), 0);
+			FlashOptionData(screen.getBrightness(), screenChangeSeconds_x15);
 			system_initSystick();
+			screenChangeTimer.setPrd(screenChangeSeconds_x15 * 15000UL);
 		}
 		
-		
+		if(btnHeld())
+		{
+			setupMode();
+		}
+
 		bool wasClick = btnClick();
 		if((screenChangeTimer.ready() || firstTime) || wasClick)
 		{
@@ -159,6 +170,72 @@ int main()
 			
 			default:
 				break;
+			}
+		}
+	}
+}
+
+void setupMode(void)
+{
+	simpleTimer32 refreshTimer(100UL);
+
+	while (true)
+	{
+		keyTick();
+		
+		char buf[5];
+
+		if(btnClick())
+		{
+			firstTime = true;
+			return;
+		}
+
+		if(refreshTimer.ready())
+		{
+			uint8_t min = (screenChangeSeconds_x15 * 15) / 60;
+			uint8_t sec = (screenChangeSeconds_x15 * 15) % 60;
+
+			itoa(sec, buf, 10);
+			if(sec > 0)
+			{
+				screen.digit(ASCII_TO_INT(buf[0]), 2);
+				screen.digit(ASCII_TO_INT(buf[1]), 3);
+			}
+			else
+			{
+				screen.digit(ASCII_TO_INT(buf[0]), 2);
+				screen.digit(ASCII_TO_INT(buf[0]), 3);
+			}
+
+			itoa(min, buf, 10);
+			if(min < 10)
+			{
+				screen.digit(12, 0);
+				screen.digit(ASCII_TO_INT(buf[0]), 1, true);
+			}
+			else
+			{
+				screen.digit(ASCII_TO_INT(buf[0]), 0);
+				screen.digit(ASCII_TO_INT(buf[1]), 1, true);
+			}
+
+			screen.refresh();
+		}
+
+		int16_t delta = enc.getDelta();
+		if(delta > 0)
+		{
+			if(screenChangeSeconds_x15 < 240)
+			{
+				screenChangeSeconds_x15++;
+			}
+		}
+		else if (delta < 0)
+		{
+			if(screenChangeSeconds_x15 > 1)
+			{
+				screenChangeSeconds_x15--;
 			}
 		}
 	}
