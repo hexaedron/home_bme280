@@ -1,4 +1,4 @@
-#include "ch32v003fun.h"
+#include <ch32v003fun.h>
 #include "funny_defs.h"
 
 #include "i2c_dma.h"
@@ -7,6 +7,7 @@
 #include "simpleTimer.h"
 #include "tim2Encoder.h"
 #include "optiondata.h"
+#include "funny_time.h"
 
 #include <stdbool.h>
 #include <cstdlib>
@@ -22,11 +23,11 @@ enum displayMode_t
 #define BRIGHTNESS_SAVE_TIMEOUT 5000UL
 
 // from system.cpp
-void system_initSystick();
-void system_initEXTI(uint32_t pin, bool risingEdge = true, bool fallingEdge = false);
-void keyTick();
-bool btnClick(void);
-bool btnHeld(void);
+//void system_initSystick();
+//void system_initEXTI(uint32_t pin, bool risingEdge = true, bool fallingEdge = false);
+//void keyTick();
+//bool btnClick(void);
+//bool btnHeld(void);
 
 void setupMode(void);
 
