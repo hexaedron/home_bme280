@@ -22,13 +22,6 @@ enum displayMode_t
 
 #define BRIGHTNESS_SAVE_TIMEOUT 5000UL
 
-// from system.cpp
-//void system_initSystick();
-//void system_initEXTI(uint32_t pin, bool risingEdge = true, bool fallingEdge = false);
-//void keyTick();
-//bool btnClick(void);
-//bool btnHeld(void);
-
 void setupMode(void);
 
 tim2Encoder enc(AFIO_PCFR1_TIM2_REMAP_NOREMAP);
