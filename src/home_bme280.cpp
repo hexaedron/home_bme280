@@ -45,6 +45,9 @@ int main()
 	uint32_t pressure, humidity;
 	int32_t temperature;
 
+	// Accroding to vk16k33 datasheet, we need to wait until it wakes up.
+	Delay_Ms(1); 
+
 	I2C_init();
 
 	sensor.init_default_params();
