@@ -9,6 +9,8 @@
 #include "optiondata.h"
 #include "funny_time.h"
 
+#include "include/pack_settings.h"
+
 #include <stdbool.h>
 #include <cstdlib>
 #include <cstring>
@@ -26,7 +28,7 @@ void setupMode(void);
 
 tim2Encoder enc(AFIO_PCFR1_TIM2_REMAP_NOREMAP);
 vk16k33 screen;
-uint8_t screenChangeSeconds_x15 = OB->Data1;
+uint16_t screenChangeSeconds_x5;
 bool firstTime = true;
 
 int main()
@@ -41,6 +43,8 @@ int main()
 	funGpioInitAll();
 	funPinMode(PC6, GPIO_Speed_In | GPIO_CNF_IN_FLOATING);
 
+	screenChangeSeconds_x5 = getScreenChangeSeconds_x5();
+
 	bmp280 sensor;
 	uint32_t pressure, humidity;
 	int32_t temperature;
@@ -54,14 +58,14 @@ int main()
 	sensor.init();
 
 	screen.init();
-	screen.setBrightness(OB->Data0);
+	screen.setBrightness(getBrigtness());
 
 	displayMode_t displayMode = displayMode_t::printTemperature;
 
-	if( (screenChangeSeconds_x15 > 240) )
-		screenChangeSeconds_x15 = 1;
+	if( (screenChangeSeconds_x5 > 720) )
+		screenChangeSeconds_x5 = 1;
 
-	simpleTimer32 screenChangeTimer((uint32_t)screenChangeSeconds_x15 * 15000UL);
+	simpleTimer32 screenChangeTimer((uint32_t)screenChangeSeconds_x5 * 5000UL);
 	simpleTimer32 flashTimer(BRIGHTNESS_SAVE_TIMEOUT);
 
 	while (true)
@@ -80,11 +84,13 @@ int main()
 			flashTimer.start_int();
 		}
 		
-		if(flashTimer.ready() && (((uint8_t)OB->Data0 != screen.getBrightness()) || ((uint8_t)OB->Data1 != screenChangeSeconds_x15)))
+		if(flashTimer.ready() && ((getBrigtness() != screen.getBrightness()) || (getScreenChangeSeconds_x5() != screenChangeSeconds_x5)))
 		{
-			FlashOptionData(screen.getBrightness(), screenChangeSeconds_x15);
+			uint8_t data0, data1;
+			packSettings(screen.getBrightness(), screenChangeSeconds_x5, data0, data1);
+			FlashOptionData(data0, data1);
 			system_initSystick();
-			screenChangeTimer.setPrd(screenChangeSeconds_x15 * 15000UL);
+			screenChangeTimer.setPrd(screenChangeSeconds_x5 * 5000UL);
 		}
 		
 		if(btnHeld())
@@ -190,14 +196,22 @@ void setupMode(void)
 
 		if(refreshTimer.ready())
 		{
-			uint8_t min = (screenChangeSeconds_x15 * 15) / 60;
-			uint8_t sec = (screenChangeSeconds_x15 * 15) % 60;
+			uint8_t min = (screenChangeSeconds_x5 * 5) / 60;
+			uint8_t sec = (screenChangeSeconds_x5 * 5) % 60;
 
 			itoa(sec, buf, 10);
 			if(sec > 0)
 			{
-				screen.digit(ASCII_TO_INT(buf[0]), 2);
-				screen.digit(ASCII_TO_INT(buf[1]), 3);
+				if(sec < 10)
+				{
+					screen.digit(0, 2);
+					screen.digit(ASCII_TO_INT(buf[0]), 3);
+				}
+				else
+				{
+					screen.digit(ASCII_TO_INT(buf[0]), 2);
+					screen.digit(ASCII_TO_INT(buf[1]), 3);
+				}
 			}
 			else
 			{
@@ -223,16 +237,16 @@ void setupMode(void)
 		int16_t delta = enc.getDelta();
 		if(delta > 0)
 		{
-			if(screenChangeSeconds_x15 < 240)
+			if(screenChangeSeconds_x5 < 720)
 			{
-				screenChangeSeconds_x15++;
+				screenChangeSeconds_x5++;
 			}
 		}
 		else if (delta < 0)
 		{
-			if(screenChangeSeconds_x15 > 1)
+			if(screenChangeSeconds_x5 > 1)
 			{
-				screenChangeSeconds_x15--;
+				screenChangeSeconds_x5--;
 			}
 		}
 	}
