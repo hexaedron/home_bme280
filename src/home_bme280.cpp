@@ -9,7 +9,7 @@
 #include "optiondata.h"
 #include "funny_time.h"
 
-#include "include/pack_settings.h"
+#include "pack_settings.h"
 
 #include <stdbool.h>
 #include <cstdlib>
