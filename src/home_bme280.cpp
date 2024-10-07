@@ -23,13 +23,18 @@ enum displayMode_t
 };
 
 #define BRIGHTNESS_SAVE_TIMEOUT 5000UL
+#define PRESSURE_HISTORY_HOURS  12
 
 void setupMode(void);
+int8_t getPressureTrend(uint32_t* pressureHistory, uint8_t pressureHistoryHours, uint32_t currentPressure);
+void pushPressure(uint32_t* pressureHistory, uint8_t pressureHistoryHours, uint32_t currentPressure);
 
 tim2Encoder enc(AFIO_PCFR1_TIM2_REMAP_NOREMAP);
 vk16k33 screen;
 uint16_t screenChangeSeconds_x5;
 bool firstTime = true;
+
+uint32_t pressureHistory[PRESSURE_HISTORY_HOURS] = {0};
 
 int main()
 {
@@ -52,7 +57,7 @@ int main()
 	// Accroding to vk16k33 datasheet, we need to wait until it wakes up.
 	Delay_Ms(1); 
 
-	I2C_init();
+	I2C_init(400000, 0);
 
 	sensor.init_default_params();
 	sensor.init();
@@ -67,6 +72,15 @@ int main()
 
 	simpleTimer32 screenChangeTimer((uint32_t)screenChangeSeconds_x5 * 5000UL);
 	simpleTimer32 flashTimer(BRIGHTNESS_SAVE_TIMEOUT);
+	simpleTimer32 pressureHistoryTimer(3600UL * 1000UL);
+
+	sensor.force_measurement();
+	while (sensor.is_measuring())
+	{
+	};
+	sensor.read_fixed();
+	pressureHistory[PRESSURE_HISTORY_HOURS - 1] = sensor.getPressureMmHg();
+	sensor.sleep();
 
 	while (true)
 	{
@@ -82,6 +96,16 @@ int main()
 		{
 			screen.decBrightness();
 			flashTimer.start_int();
+		}
+
+		if(pressureHistoryTimer.ready())
+		{
+			sensor.force_measurement();
+			while (sensor.is_measuring())
+			{
+			};
+			sensor.read_fixed();
+			pushPressure(pressureHistory, PRESSURE_HISTORY_HOURS, sensor.getPressureMmHg());
 		}
 		
 		if(flashTimer.ready() && ((getBrigtness() != screen.getBrightness()) || (getScreenChangeSeconds_x5() != screenChangeSeconds_x5)))
@@ -164,9 +188,21 @@ int main()
 					itoa(pressure / 256, buf, 10);
 					screen.digit(ASCII_TO_INT(buf[0]), 0);
 					screen.digit(ASCII_TO_INT(buf[1]), 1);
-					screen.digit(ASCII_TO_INT(buf[2]), 2, true);
-					itoa(pressure % 256, buf, 10);
-					screen.digit(ASCII_TO_INT(buf[0]), 3);
+					screen.digit(ASCII_TO_INT(buf[2]), 2);
+					switch (getPressureTrend(pressureHistory, PRESSURE_HISTORY_HOURS, pressure))
+					{
+						case 1:
+							screen.digit(14, 3);
+						break;
+
+						case -1:
+							screen.digit(13, 3);
+						break;
+					
+						default:
+							screen.digit(12, 3);
+						break;
+					}
 					screen.refresh();
 					displayMode = displayMode_t::printTemperature;
 				break;
