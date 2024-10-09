@@ -1,6 +1,7 @@
 #include <ch32v003fun.h>
 
-#define PRESSURE_DELTA 128UL // ~0.5 mmHg
+#define PRESSURE_DELTA      64UL  // ~0.25 mmHg
+#define PRESSURE_FULL_DELTA 256UL // 1 mmHg
 
 int8_t getPressureTrend(uint32_t* pressureHistory, uint8_t pressureHistoryHours, uint32_t currentPressure)
 {
@@ -19,7 +20,13 @@ int8_t getPressureTrend(uint32_t* pressureHistory, uint8_t pressureHistoryHours,
     if(currentPressure > (max + PRESSURE_DELTA))
         return 1;
 
+    if( (currentPressure > min) && ((currentPressure - min) > PRESSURE_FULL_DELTA) )
+        return 1;
+
     if(currentPressure < (min - PRESSURE_DELTA))
+        return -1;
+
+    if( (currentPressure < max) && ((max - currentPressure) > PRESSURE_FULL_DELTA) )
         return -1;
 
     return 0;
